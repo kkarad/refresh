@@ -17,8 +17,10 @@ public final class ConflationQueueImpl<K, V> implements ConflationQueue<K, V> {
     public void put(V value) {
         try {
             K key = keyExtractor.toKey(value);
-            map.put(key, value);
-            queue.put(key);
+            V previousValue = map.put(key, value);
+            if (previousValue == null) {
+                queue.put(key);
+            }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Interrupted while putting into the queue", e);

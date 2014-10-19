@@ -3,7 +3,6 @@ package org.kkarad.examples.conflation;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
@@ -30,8 +29,7 @@ public class ConflationQueueTest {
         queue.put(new Rate("EURGBP", 0.8002));
 
         Rate first = queue.take();
-        Rate second = queue.take();
-        assertThat(first.price, allOf(equalTo(second.price), equalTo(0.8002)));
+        assertThat(first.price, equalTo(0.8002));
     }
 
     @Test
@@ -42,11 +40,9 @@ public class ConflationQueueTest {
 
         Rate first = queue.take();
         Rate second = queue.take();
-        Rate third = queue.take();
 
         assertThat(first.ccyPair, equalTo("EURGBP"));
         assertThat(second.ccyPair, equalTo("GBPUSD"));
-        assertThat(third.ccyPair, equalTo("EURGBP"));
     }
 
     private static class Rate {
