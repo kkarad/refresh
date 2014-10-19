@@ -6,17 +6,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class ConflationQueueImpl<K, V> implements ConflationQueue<K, V> {
     private final ConcurrentHashMap<K, V> map = new ConcurrentHashMap<>();
     private final ArrayBlockingQueue<K> queue = new ArrayBlockingQueue<>(1000);
-    private KeyExtractor<K, V> keyExtractor;
 
-    public ConflationQueueImpl(KeyExtractor<K, V> keyExtractor) {
-        this.keyExtractor = keyExtractor;
+    public ConflationQueueImpl() {
     }
 
 
     @Override
-    public void put(V value) {
+    public void put(K key, V value) {
         try {
-            K key = keyExtractor.toKey(value);
             V previousValue = map.put(key, value);
             if (previousValue == null) {
                 queue.put(key);

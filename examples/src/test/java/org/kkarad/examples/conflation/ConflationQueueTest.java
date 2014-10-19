@@ -12,21 +12,15 @@ public class ConflationQueueTest {
 
     @Before
     public void setUp() throws Exception {
-        KeyExtractor<String, Rate> keyExtractor = new KeyExtractor<String, Rate>() {
-            @Override
-            public String toKey(Rate value) {
-                return value.ccyPair;
-            }
-        };
-
-        queue = new ConflationQueueImpl<>(keyExtractor);
-
+        queue = new ConflationQueueImpl<>();
     }
 
     @Test
     public void queue_conflates() throws Exception {
-        queue.put(new Rate("EURGBP", 0.8001));
-        queue.put(new Rate("EURGBP", 0.8002));
+        Rate eurgbp1 = new Rate("EURGBP", 0.8001);
+        queue.put(eurgbp1.ccyPair, eurgbp1);
+        Rate eurgbp2 = new Rate("EURGBP", 0.8002);
+        queue.put(eurgbp2.ccyPair, eurgbp2);
 
         Rate first = queue.take();
         assertThat(first.price, equalTo(0.8002));
@@ -34,9 +28,12 @@ public class ConflationQueueTest {
 
     @Test
     public void queue_keeps_order() throws Exception {
-        queue.put(new Rate("EURGBP", 0.8001));
-        queue.put(new Rate("GBPUSD", 1.2500));
-        queue.put(new Rate("EURGBP", 0.8002));
+        Rate eurgbp1 = new Rate("EURGBP", 0.8001);
+        queue.put(eurgbp1.ccyPair, eurgbp1);
+        Rate gbpusd = new Rate("GBPUSD", 1.2500);
+        queue.put(gbpusd.ccyPair, gbpusd);
+        Rate eurgbp2 = new Rate("EURGBP", 0.8002);
+        queue.put(eurgbp2.ccyPair, eurgbp2);
 
         Rate first = queue.take();
         Rate second = queue.take();
