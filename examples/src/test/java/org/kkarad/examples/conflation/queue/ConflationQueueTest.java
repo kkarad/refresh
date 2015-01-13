@@ -1,4 +1,4 @@
-package org.kkarad.examples.conflation;
+package org.kkarad.examples.conflation.queue;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -12,7 +12,7 @@ public class ConflationQueueTest {
 
     @Before
     public void setUp() throws Exception {
-        queue = new ConflationQueueImpl<>();
+        queue = new ArrayBlockingConflationQueue<>();
     }
 
     @Test
@@ -42,13 +42,4 @@ public class ConflationQueueTest {
         assertThat(second.ccyPair, equalTo("GBPUSD"));
     }
 
-    private static class Rate {
-        public final String ccyPair;
-        public final double price;
-
-        private Rate(String ccyPair, double price) {
-            this.ccyPair = ccyPair;
-            this.price = price;
-        }
-    }
 }

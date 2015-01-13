@@ -1,13 +1,13 @@
-package org.kkarad.examples.conflation;
+package org.kkarad.examples.conflation.queue;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class ConflationQueueImpl<K, V> implements ConflationQueue<K, V> {
+public final class ArrayBlockingConflationQueue<K, V> implements ConflationQueue<K, V> {
     private final ConcurrentHashMap<K, V> map = new ConcurrentHashMap<>();
     private final ArrayBlockingQueue<K> queue = new ArrayBlockingQueue<>(1000);
 
-    public ConflationQueueImpl() {
+    public ArrayBlockingConflationQueue() {
     }
 
 
