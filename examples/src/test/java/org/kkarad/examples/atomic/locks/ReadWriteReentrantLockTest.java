@@ -67,7 +67,7 @@ public class ReadWriteReentrantLockTest {
 
     @Test(timeout = 20000)
     public void test_parallel() throws Exception {
-        final int nThreads = 100;
+        final int nThreads = 500;
         final ExecutorService executorService = Executors.newFixedThreadPool(nThreads);
         final CountDownLatch startLatch = new CountDownLatch(1);
         final CountDownLatch stopLatch = new CountDownLatch(nThreads);
@@ -82,14 +82,12 @@ public class ReadWriteReentrantLockTest {
                         startLatch.await();
                         if(counter % 2 == 0) {
                             rwLock.readLock();
-                            //System.out.printf("%s after readLock: %s%n", Thread.currentThread().getName(), rwLock);
+                            System.out.printf("%s is reading%n", Thread.currentThread().getName());
                             rwLock.readUnlock();
-                            //System.out.printf("%s after readUnlock: %s%n", Thread.currentThread().getName(), rwLock);
                         } else {
                             rwLock.writeLock();
-                            //System.out.printf("%s after writeLock: %s%n", Thread.currentThread().getName(), rwLock);
+                            System.out.printf("%s is writing%n", Thread.currentThread().getName());
                             rwLock.writeUnlock();
-                            //System.out.printf("%s after writeUnlock: %s%n", Thread.currentThread().getName(), rwLock);
                         }
                         stopLatch.countDown();
                     } catch (InterruptedException e) {
