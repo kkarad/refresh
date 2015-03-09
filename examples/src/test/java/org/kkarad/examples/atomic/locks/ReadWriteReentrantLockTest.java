@@ -10,7 +10,7 @@ public class ReadWriteReentrantLockTest {
 
     @Test
     public void test_reentrant_read_lock() throws Exception {
-        ReadWriteReentrantLock rwLock = new ReadWriteReentrantLock();
+        ReadWriteReentrantLock rwLock = new ReadWriteReentrantLock(false);
         System.out.println("init: " + rwLock);
         rwLock.readLock();
         System.out.println("after 1st lock: " + rwLock);
@@ -26,7 +26,7 @@ public class ReadWriteReentrantLockTest {
 
     @Test
     public void test_reentrant_write_lock() throws Exception {
-        ReadWriteReentrantLock rwLock = new ReadWriteReentrantLock();
+        ReadWriteReentrantLock rwLock = new ReadWriteReentrantLock(false);
         System.out.println("init: " + rwLock);
         rwLock.writeLock();
         System.out.println("after 1st lock: " + rwLock);
@@ -41,26 +41,26 @@ public class ReadWriteReentrantLockTest {
 
     @Test(expected = IllegalMonitorStateException.class)
     public void test_read_unlock_without_ownership() throws Exception {
-        ReadWriteReentrantLock rwLock = new ReadWriteReentrantLock();
+        ReadWriteReentrantLock rwLock = new ReadWriteReentrantLock(false);
         rwLock.readUnlock();
     }
 
     @Test(expected = IllegalMonitorStateException.class)
     public void test_write_unlock_without_ownership() throws Exception {
-        ReadWriteReentrantLock rwLock = new ReadWriteReentrantLock();
+        ReadWriteReentrantLock rwLock = new ReadWriteReentrantLock(false);
         rwLock.writeUnlock();
     }
 
     @Test(expected = IllegalMonitorStateException.class)
     public void test_read_write_subsequent_locks() throws Exception {
-        ReadWriteReentrantLock rwLock = new ReadWriteReentrantLock();
+        ReadWriteReentrantLock rwLock = new ReadWriteReentrantLock(false);
         rwLock.readLock();
         rwLock.writeLock();
     }
 
     @Test(expected = IllegalMonitorStateException.class)
     public void test_write_read_subsequent_locks() throws Exception {
-        ReadWriteReentrantLock rwLock = new ReadWriteReentrantLock();
+        ReadWriteReentrantLock rwLock = new ReadWriteReentrantLock(false);
         rwLock.writeLock();
         rwLock.readLock();
     }
@@ -71,16 +71,16 @@ public class ReadWriteReentrantLockTest {
         final ExecutorService executorService = Executors.newFixedThreadPool(nThreads);
         final CountDownLatch startLatch = new CountDownLatch(1);
         final CountDownLatch stopLatch = new CountDownLatch(nThreads);
-        final ReadWriteReentrantLock rwLock = new ReadWriteReentrantLock();
+        final ReadWriteReentrantLock rwLock = new ReadWriteReentrantLock(false);
 
-        for(int i=0; i<nThreads; i++) {
+        for (int i = 0; i < nThreads; i++) {
             final int counter = i;
             executorService.submit(new Runnable() {
                 @Override
                 public void run() {
                     try {
                         startLatch.await();
-                        if(counter % 2 == 0) {
+                        if (counter % 2 == 0) {
                             rwLock.readLock();
                             System.out.printf("%s is reading%n", Thread.currentThread().getName());
                             rwLock.readUnlock();
@@ -103,5 +103,41 @@ public class ReadWriteReentrantLockTest {
         stopLatch.await();
         System.out.println("Test finished");
         executorService.shutdown();
+    }
+
+    @Test
+    public void test_writer_priority() throws Exception {
+        final int nThreads = 200;
+        final ExecutorService executorService = Executors.newFixedThreadPool(nThreads);
+        final ReadWriteReentrantLock rwLock = new ReadWriteReentrantLock(true);
+        final CountDownLatch stopLatch = new CountDownLatch(nThreads);
+
+        final Runnable readAction = new Runnable() {
+            @Override
+            public void run() {
+                rwLock.readLock();
+                System.out.printf("%s is reading%n", Thread.currentThread().getName());
+                rwLock.readUnlock();
+                stopLatch.countDown();
+            }
+        };
+
+        final Runnable writeAction = new Runnable() {
+            @Override
+            public void run() {
+                rwLock.writeLock();
+                System.out.printf("%s is writing%n", Thread.currentThread().getName());
+                rwLock.writeUnlock();
+                stopLatch.countDown();
+            }
+        };
+
+        System.out.println("Test starts");
+        int writerIteration = 10;
+        for (int i = 0; i < nThreads; i++) {
+            executorService.submit(i == writerIteration ? writeAction : readAction);
+        }
+        stopLatch.await();
+        System.out.println("Test finished");
     }
 }

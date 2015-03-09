@@ -7,21 +7,27 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public final class ReadWriteReentrantLock {
-    private Lock counterLock = new ReentrantLock();
-    private Condition readMode = counterLock.newCondition();
-    private Condition writeMode = counterLock.newCondition();
+    private final Lock counterLock = new ReentrantLock();
+    private final Condition readMode = counterLock.newCondition();
+    private final Condition writeMode = counterLock.newCondition();
     private Set<Thread> readThreads = new HashSet<>();
     private Thread writeThread = null;
     private int counter = 0;
+    private final boolean priorityToWriters;
+    private boolean writerWaiting = false;
 
-    public void readLock() throws InterruptedException {
+    public ReadWriteReentrantLock(boolean priorityToWriters) {
+        this.priorityToWriters = priorityToWriters;
+    }
+
+    public void readLock() {
         counterLock.lock();
         try {
             assertWriteLockDoesntExist();
 
             if(!readThreads.contains(Thread.currentThread())) {
-                while (counter < 0) {
-                    readMode.await();
+                while (counter < 0 || isWriterWaiting()) {
+                    readMode.awaitUninterruptibly();
                 }
 
                 counter++;
@@ -31,6 +37,10 @@ public final class ReadWriteReentrantLock {
             counterLock.unlock();
         }
 
+    }
+
+    private boolean isWriterWaiting() {
+        return priorityToWriters && writerWaiting;
     }
 
     private void assertWriteLockDoesntExist() {
@@ -61,14 +71,15 @@ public final class ReadWriteReentrantLock {
     }
 
 
-    public void writeLock() throws InterruptedException {
+    public void writeLock() {
         counterLock.lock();
         try {
             assertReadLockDoesntExist();
 
             if(writeThread != Thread.currentThread()) {
                 while(counter != 0) {
-                    writeMode.await();
+                    writerIsWaiting(true);
+                    writeMode.awaitUninterruptibly();
                 }
 
                 counter--;
@@ -76,6 +87,12 @@ public final class ReadWriteReentrantLock {
             }
         } finally {
             counterLock.unlock();
+        }
+    }
+
+    private void writerIsWaiting(boolean waiting) {
+        if(priorityToWriters) {
+            writerWaiting = waiting;
         }
     }
 
@@ -93,6 +110,7 @@ public final class ReadWriteReentrantLock {
             writeThread = null;
             counter++;
             if(counter == 0) {
+                writerIsWaiting(false);
                 readMode.signalAll();
                 writeMode.signalAll();
             }
